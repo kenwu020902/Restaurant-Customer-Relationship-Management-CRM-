@@ -227,6 +227,9 @@
             <div class="form-group">
                 <label for="postcode">Postcode</label>
                 <input type="text" id="postcode" placeholder="e.g., SW1A 1AA">
+                <button type="button" onclick="lookupPostcode()" style="margin-left:10px;">
+                🔍 Find Address
+                </button>
             </div>
             
             <div class="form-group">
@@ -258,6 +261,97 @@
 
     <!-- ALL JAVASCRIPT IS HERE - NO SEPARATE FILES -->
     <script>
+        // POSTCODE LOOKUP FUNCTION
+async function lookupPostcode() {
+    const postcodeInput = document.getElementById('postcode');
+    const addressInput = document.getElementById('address'); // We'll add this field
+    
+    const postcode = postcodeInput.value.trim().toUpperCase().replace(/\s+/g, '');
+    
+    if (!postcode) {
+        alert('Please enter a postcode first!');
+        return;
+    }
+    
+    // Show loading
+    const lookupBtn = event.target;
+    const originalText = lookupBtn.innerHTML;
+    lookupBtn.innerHTML = '⏳ Searching...';
+    lookupBtn.disabled = true;
+    
+    try {
+        // Call UK Postcodes.io API
+        const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+        const data = await response.json();
+        
+        if (data.status === 200) {
+            const result = data.result;
+            
+            // Format the address
+            const address = `
+${result.line_1 || ''}
+${result.line_2 || ''}
+${result.line_3 || ''}
+${result.post_town || ''}
+${result.country || ''}
+`.trim();
+            
+            // Fill address field if it exists
+            if (addressInput) {
+                addressInput.value = address;
+            } else {
+                // Create address field if it doesn't exist
+                createAddressField(address);
+            }
+            
+            // Show success message
+            alert(`✅ Address found for ${postcode}:\n\n${address}`);
+            
+        } else {
+            alert('❌ Postcode not found. Please check and try again.');
+        }
+        
+    } catch (error) {
+        console.error('Postcode lookup error:', error);
+        alert('⚠️ Could not fetch address. Please check your internet connection.');
+    } finally {
+        // Reset button
+        lookupBtn.innerHTML = originalText;
+        lookupBtn.disabled = false;
+    }
+}
+
+// CREATE ADDRESS FIELD IF IT DOESN'T EXIST
+function createAddressField(address) {
+    // Find the form
+    const form = document.querySelector('form') || document.querySelector('.form-container');
+    
+    // Create address textarea
+    const addressDiv = document.createElement('div');
+    addressDiv.className = 'form-group';
+    addressDiv.innerHTML = `
+        <label for="address">Address</label>
+        <textarea id="address" rows="3" placeholder="Address will auto-fill from postcode">${address}</textarea>
+    `;
+    
+    // Insert after postcode field
+    const postcodeField = document.getElementById('postcode').parentElement;
+    postcodeField.parentNode.insertBefore(addressDiv, postcodeField.nextSibling);
+    
+    // Add some CSS for the textarea
+    const style = document.createElement('style');
+    style.textContent = `
+        textarea#address {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            resize: vertical;
+        }
+    `;
+    document.head.appendChild(style);
+}
         // Customer data stored in browser memory
         let customers = [];
         
