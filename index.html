@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🍕 Restaurant CRM - Simple Version</title>
+    <title>🍕 Restaurant CRM - Smart Address Lookup</title>
     <style>
         /* Reset everything */
         * {
@@ -226,7 +226,7 @@
             </div>
             
             <div class="form-group">
-                <label for="postcode">Postcode</label>
+                <label for="postcode">Postcode Lookup</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="postcode" placeholder="e.g., SW1A 1AA" style="flex: 1;">
                     <button type="button" onclick="lookupPostcode()" style="
@@ -242,12 +242,42 @@
                     </button>
                 </div>
                 <small style="color: #666; display: block; margin-top: 5px;">
-                    Enter UK postcode and click to auto-fill address
+                    Enter UK postcode to auto-fill street, city, and area details
                 </small>
             </div>
             
-            <!-- ADDRESS FIELD WILL APPEAR HERE -->
-            <div id="addressContainer"></div>
+            <!-- SMART ADDRESS FIELDS WILL APPEAR HERE -->
+            <div id="smartAddressContainer">
+                <div class="form-group">
+                    <label for="houseNumber">House/Flat Number *</label>
+                    <input type="text" id="houseNumber" placeholder="e.g., 10 or Flat 3A">
+                </div>
+                
+                <div class="form-group">
+                    <label for="streetName">Street Name</label>
+                    <input type="text" id="streetName" placeholder="Will auto-fill from postcode" readonly style="background: #f5f5f5;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="area">Area/Neighborhood</label>
+                    <input type="text" id="area" placeholder="Will auto-fill from postcode" readonly style="background: #f5f5f5;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="city">City/Town</label>
+                    <input type="text" id="city" placeholder="Will auto-fill from postcode" readonly style="background: #f5f5f5;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="county">County</label>
+                    <input type="text" id="county" placeholder="Will auto-fill from postcode" readonly style="background: #f5f5f5;">
+                </div>
+                
+                <div class="form-group">
+                    <label for="country">Country</label>
+                    <input type="text" id="country" placeholder="Will auto-fill from postcode" readonly style="background: #f5f5f5;">
+                </div>
+            </div>
             
             <div class="form-group">
                 <label for="usualOrder">Usual Order</label>
@@ -284,17 +314,7 @@
         font-size: 0.9em;
         opacity: 0.8;
     ">
-        <p>Restaurant CRM v1.0 | Data saves in your browser | 
-           <button onclick="addSampleCustomers()" style="
-               background: transparent;
-               border: 1px solid white;
-               color: white;
-               padding: 5px 15px;
-               border-radius: 20px;
-               margin-left: 10px;
-               cursor: pointer;
-           ">Load Sample Data</button>
-        </p>
+        <p>Restaurant CRM v2.0 | Smart Address Lookup | Data saves in browser</p>
     </div>
 
     <!-- ALL JAVASCRIPT -->
@@ -310,13 +330,13 @@
             updateCustomerCount();
         });
         
-        // ========== POSTCODE LOOKUP FUNCTIONS ==========
+        // ========== SMART POSTCODE LOOKUP ==========
         async function lookupPostcode() {
             const postcodeInput = document.getElementById('postcode');
             let postcode = postcodeInput.value.trim().toUpperCase();
             
             if (!postcode) {
-                alert('📭 Please enter a UK postcode first!\n\nExamples: SW1A 1AA, BT7 1EX, EH1 1RE');
+                alert('📭 Please enter a UK postcode first!\n\nExamples:\nSW1A 1AA (London)\nBT7 1EX (Belfast)\nEH1 1RE (Edinburgh)\nM1 1AF (Manchester)');
                 return;
             }
             
@@ -328,215 +348,161 @@
             
             try {
                 const cleanPostcode = postcode.replace(/\s+/g, '');
+                console.log('Fetching postcode:', cleanPostcode);
+                
+                // Call UK Postcodes.io API
                 const response = await fetch(`https://api.postcodes.io/postcodes/${cleanPostcode}`);
                 const data = await response.json();
                 
                 if (data.status !== 200) {
-                    alert(`❌ Postcode "${postcode}" not found.`);
+                    alert(`❌ Postcode "${postcode}" not found.\n\nPlease check:\n• Valid UK postcode format\n• Correct spelling\n• Try a different postcode`);
                     return;
                 }
                 
-                showAddressPopup(postcode, data.result);
+                const result = data.result;
+                console.log('API Response:', result);
+                
+                // Auto-fill all address fields
+                autoFillAddressFields(result, postcode);
+                
+                // Show success message with details
+                showMessage(`✅ Found address for ${postcode}`, 'success');
+                
+                // Focus on house number field for quick entry
+                document.getElementById('houseNumber').focus();
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('⚠️ Could not fetch address information.');
+                alert('⚠️ Could not fetch address information.\nPlease check your internet connection.');
             } finally {
                 lookupBtn.innerHTML = originalText;
                 lookupBtn.disabled = false;
             }
         }
         
-        function showAddressPopup(postcode, areaData) {
+        function autoFillAddressFields(data, postcode) {
+            // Get all possible address components
+            const addressData = extractAddressComponents(data);
+            
+            console.log('Extracted address data:', addressData);
+            
+            // Fill the form fields
+            document.getElementById('streetName').value = addressData.street || addressData.road || '';
+            document.getElementById('area').value = addressData.area || addressData.neighbourhood || addressData.admin_ward || '';
+            document.getElementById('city').value = addressData.city || addressData.town || addressData.post_town || '';
+            document.getElementById('county').value = addressData.county || addressData.admin_county || '';
+            document.getElementById('country').value = addressData.country || 'United Kingdom';
+            
+            // Make fields editable and highlight them
+            const addressFields = ['streetName', 'area', 'city', 'county', 'country'];
+            addressFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field.value) {
+                    field.readOnly = false;
+                    field.style.backgroundColor = '#f8fff8';
+                    field.style.borderColor = '#4CAF50';
+                    field.style.color = '#2c3e50';
+                }
+            });
+            
+            // Show additional info popup
+            showAddressDetailsPopup(addressData, postcode);
+        }
+        
+        function extractAddressComponents(data) {
+            // Extract all possible address components from API response
+            return {
+                // Street level
+                street: data.street || '',
+                road: data.road || '',
+                line1: data.line_1 || '',
+                line2: data.line_2 || '',
+                line3: data.line_3 || '',
+                
+                // Area level
+                area: data.admin_ward || '',
+                neighbourhood: data.admin_ward || '',
+                district: data.admin_district || '',
+                ward: data.admin_ward || '',
+                
+                // City/Town level
+                city: data.post_town || '',
+                town: data.post_town || '',
+                post_town: data.post_town || '',
+                
+                // County level
+                county: data.admin_county || data.county || '',
+                admin_county: data.admin_county || '',
+                
+                // Region/Country
+                region: data.region || '',
+                country: data.country || 'United Kingdom',
+                
+                // Additional info
+                latitude: data.latitude,
+                longitude: data.longitude,
+                parliamentary_constituency: data.parliamentary_constituency || '',
+                nuts: data.nuts || ''
+            };
+        }
+        
+        function showAddressDetailsPopup(addressData, postcode) {
             // Remove existing popup
-            const existingPopup = document.getElementById('addressPopup');
+            const existingPopup = document.getElementById('addressDetailsPopup');
             if (existingPopup) existingPopup.remove();
             
+            let detailsHTML = '';
+            
+            if (addressData.street || addressData.road) {
+                detailsHTML += `<p><strong>Street:</strong> ${addressData.street || addressData.road}</p>`;
+            }
+            if (addressData.area) {
+                detailsHTML += `<p><strong>Area:</strong> ${addressData.area}</p>`;
+            }
+            if (addressData.city) {
+                detailsHTML += `<p><strong>City/Town:</strong> ${addressData.city}</p>`;
+            }
+            if (addressData.county) {
+                detailsHTML += `<p><strong>County:</strong> ${addressData.county}</p>`;
+            }
+            if (addressData.region) {
+                detailsHTML += `<p><strong>Region:</strong> ${addressData.region}</p>`;
+            }
+            
             const popupHTML = `
-                <div id="addressPopup" style="
+                <div id="addressDetailsPopup" style="
                     position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
+                    bottom: 20px;
+                    right: 20px;
                     background: white;
-                    padding: 25px;
+                    padding: 20px;
                     border-radius: 15px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
                     z-index: 10000;
-                    min-width: 400px;
-                    max-width: 90vw;
+                    max-width: 300px;
+                    border-left: 5px solid #4CAF50;
                 ">
-                    <h3 style="margin: 0 0 10px 0; color: #333;">
-                        📍 ${postcode} - ${areaData.region || areaData.country}
-                    </h3>
-                    <p style="color: #666; margin-bottom: 20px;">
-                        Choose address option:
-                    </p>
-                    
-                    <!-- OPTION 1: USE AREA ONLY -->
-                    <div style="margin-bottom: 15px; padding: 15px; border: 2px solid #4CAF50; border-radius: 10px; cursor: pointer;"
-                         onclick="useAreaAddress('${postcode}', '${escapeHtml(areaData.admin_district || areaData.region)}', '${escapeHtml(areaData.post_town || '')}')">
-                        <strong style="color: #333;">🏘️ Area Address</strong>
-                        <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-                            ${areaData.admin_district || areaData.region}, ${areaData.post_town || ''}<br>
-                            ${postcode}
-                        </p>
-                    </div>
-                    
-                    <!-- OPTION 2: ENTER FULL ADDRESS -->
-                    <div style="margin-bottom: 15px; padding: 15px; border: 2px solid #2196F3; border-radius: 10px; cursor: pointer;"
-                         onclick="showCustomAddressForm('${postcode}', '${escapeHtml(areaData.admin_district || areaData.region)}', '${escapeHtml(areaData.post_town || '')}')">
-                        <strong style="color: #333;">🏠 Enter Full Address</strong>
-                        <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">
-                            Add house number, street name, etc.
-                        </p>
-                    </div>
-                    
-                    <!-- OPTION 3: KNOWN PLACES FOR BT7 -->
-                    ${postcode.startsWith('BT7') ? `
-                    <div style="padding: 15px; border: 2px solid #FF9800; border-radius: 10px;">
-                        <strong style="color: #333;">🏫 Known Places in BT7</strong>
-                        <div style="margin-top: 10px;">
-                            <button onclick="selectKnownPlace('Queen\\'s University Belfast\\nUniversity Road\\nBelfast\\nBT7 1EX', 'Queen\\'s University')" 
-                                    style="background: #FF9800; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin: 3px; cursor: pointer; font-size: 14px;">
-                                Queen's University
-                            </button>
-                            <button onclick="selectKnownPlace('Belfast City Hospital\\nLisburn Road\\nBelfast\\nBT7 1EX', 'Belfast City Hospital')" 
-                                    style="background: #FF9800; color: white; border: none; padding: 8px 15px; border-radius: 5px; margin: 3px; cursor: pointer; font-size: 14px;">
-                                City Hospital
-                            </button>
-                        </div>
-                    </div>
-                    ` : ''}
-                    
-                    <div style="text-align: center; margin-top: 20px;">
-                        <button onclick="document.getElementById('addressPopup').remove()" 
-                                style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                            Cancel
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="color: #333;">📍 ${postcode}</strong>
+                        <button onclick="document.getElementById('addressDetailsPopup').remove()" 
+                                style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">
+                            ×
                         </button>
                     </div>
+                    ${detailsHTML || '<p>Address details found! Enter house number above.</p>'}
+                    <p style="color: #666; font-size: 12px; margin-top: 10px;">
+                        Just enter house number - other fields auto-filled!
+                    </p>
                 </div>
             `;
             
             document.body.insertAdjacentHTML('beforeend', popupHTML);
-        }
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-        
-        function useAreaAddress(postcode, district, town) {
-            const address = `${district}\n${town}\n${postcode}`;
-            updateAddressField(address);
-            document.getElementById('addressPopup').remove();
-            showMessage('✅ Area address saved!', 'success');
-        }
-        
-        function showCustomAddressForm(postcode, district, town) {
-            document.getElementById('addressPopup').remove();
             
-            const formHTML = `
-                <div id="customAddressForm" style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: white;
-                    padding: 25px;
-                    border-radius: 15px;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-                    z-index: 10001;
-                    min-width: 400px;
-                ">
-                    <h3 style="margin: 0 0 20px 0; color: #333;">🏠 Enter Full Address</h3>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; color: #666;">House/Flat Number</label>
-                        <input type="text" id="customHouseNumber" placeholder="e.g., 10 or Flat 3A" 
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; color: #666;">Street Name *</label>
-                        <input type="text" id="customStreetName" placeholder="e.g., University Road" 
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; color: #666;">Area</label>
-                        <input type="text" id="customArea" value="${town}" 
-                               style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px;">
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 5px; color: #666;">Postcode</label>
-                        <input type="text" id="customPostcode" value="${postcode}" readonly
-                               style="width: 100%; padding: 10px; border: 2px solid #4CAF50; border-radius: 5px; background: #f8fff8;">
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between;">
-                        <button onclick="saveCustomAddress()" 
-                                style="background: #4CAF50; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-                            ✅ Save Address
-                        </button>
-                        
-                        <button onclick="document.getElementById('customAddressForm').remove()" 
-                                style="background: #666; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer;">
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', formHTML);
-        }
-        
-        function saveCustomAddress() {
-            const houseNumber = document.getElementById('customHouseNumber').value.trim();
-            const streetName = document.getElementById('customStreetName').value.trim();
-            const area = document.getElementById('customArea').value.trim();
-            const postcode = document.getElementById('customPostcode').value.trim();
-            
-            if (!streetName) {
-                alert('Please enter a street name');
-                return;
-            }
-            
-            let fullAddress = '';
-            if (houseNumber) fullAddress += houseNumber + ' ';
-            fullAddress += streetName + '\n';
-            if (area) fullAddress += area + '\n';
-            fullAddress += postcode;
-            
-            document.getElementById('customAddressForm').remove();
-            updateAddressField(fullAddress);
-            showMessage('✅ Custom address saved!', 'success');
-        }
-        
-        function selectKnownPlace(address, name) {
-            document.getElementById('addressPopup').remove();
-            updateAddressField(address);
-            showMessage(`✅ ${name} address saved!`, 'success');
-        }
-        
-        function updateAddressField(address) {
-            const addressContainer = document.getElementById('addressContainer');
-            addressContainer.innerHTML = `
-                <div class="form-group">
-                    <label for="address" style="color: #4CAF50; font-weight: bold;">
-                        📍 Delivery Address
-                    </label>
-                    <textarea id="address" rows="3" 
-                              style="width: 100%; padding: 12px; border: 2px solid #4CAF50; border-radius: 8px; font-family: inherit; background: #f8fff8;"
-                              placeholder="Address will appear here">${address}</textarea>
-                </div>
-            `;
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                const popup = document.getElementById('addressDetailsPopup');
+                if (popup) popup.remove();
+            }, 10000);
         }
         
         // ========== CUSTOMER MANAGEMENT FUNCTIONS ==========
@@ -546,14 +512,33 @@
             const name = document.getElementById('customerName').value.trim();
             const phone = document.getElementById('phone').value.trim();
             const postcode = document.getElementById('postcode').value.trim();
+            const houseNumber = document.getElementById('houseNumber').value.trim();
+            const streetName = document.getElementById('streetName').value.trim();
+            const area = document.getElementById('area').value.trim();
+            const city = document.getElementById('city').value.trim();
+            const county = document.getElementById('county').value.trim();
+            const country = document.getElementById('country').value.trim();
             const usualOrder = document.getElementById('usualOrder').value.trim();
-            const addressField = document.getElementById('address');
-            const address = addressField ? addressField.value.trim() : '';
             
-            console.log('Form values:', {name, phone, postcode, usualOrder, address});
+            // Build full address
+            let fullAddress = '';
+            if (houseNumber) fullAddress += houseNumber + ' ';
+            if (streetName) fullAddress += streetName + '\n';
+            if (area) fullAddress += area + '\n';
+            if (city) fullAddress += city + '\n';
+            if (county) fullAddress += county + '\n';
+            if (country) fullAddress += country + '\n';
+            if (postcode) fullAddress += postcode;
+            
+            console.log('Form values:', {name, phone, postcode, houseNumber, streetName, area, city, county, country, usualOrder, fullAddress});
             
             if (!name || !phone) {
                 alert('⚠️ Please fill in at least Name and Phone Number!');
+                return;
+            }
+            
+            if (!houseNumber) {
+                alert('⚠️ Please enter a house/flat number!\n\nPostcode lookup provides street and area details, but you need to add the house number.');
                 return;
             }
             
@@ -563,7 +548,13 @@
                 name: name,
                 phone: phone,
                 postcode: postcode || 'Not provided',
-                address: address || 'Not provided',
+                houseNumber: houseNumber || '',
+                streetName: streetName || '',
+                area: area || '',
+                city: city || '',
+                county: county || '',
+                country: country || '',
+                address: fullAddress || 'Not provided',
                 usualOrder: usualOrder || 'Not specified',
                 orderCount: 1,
                 dateAdded: new Date().toLocaleDateString('en-GB', {
@@ -612,21 +603,17 @@
                 card.classList.add('frequent');
             }
             
-            // Build address display safely
-            let addressDisplay = '';
-            if (customer.address && customer.address !== 'Not provided') {
-                // Escape HTML and convert newlines to <br>
-                const safeAddress = customer.address
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#039;')
-                    .replace(/\n/g, '<br>');
-                addressDisplay = `<div style="color: #666; margin: 5px 0; font-size: 0.9em;">${safeAddress}</div>`;
-            }
+            // Build formatted address
+            let formattedAddress = '';
+            if (customer.houseNumber) formattedAddress += customer.houseNumber + ' ';
+            if (customer.streetName) formattedAddress += customer.streetName + '<br>';
+            if (customer.area && customer.area !== customer.city) formattedAddress += customer.area + '<br>';
+            if (customer.city) formattedAddress += customer.city + '<br>';
+            if (customer.county) formattedAddress += customer.county + '<br>';
+            if (customer.country) formattedAddress += customer.country + '<br>';
+            if (customer.postcode) formattedAddress += customer.postcode;
             
-            // Escape other fields for safety
+            // Escape HTML for safety
             const safeName = escapeHtml(customer.name || '');
             const safePhone = escapeHtml(customer.phone || '');
             const safePostcode = escapeHtml(customer.postcode || '');
@@ -637,7 +624,7 @@
                 <div class="name">${safeName}</div>
                 <div class="phone">📞 ${safePhone}</div>
                 <div class="postcode">📮 ${safePostcode}</div>
-                ${addressDisplay}
+                ${formattedAddress ? `<div style="color: #666; margin: 5px 0; font-size: 0.9em;">${formattedAddress}</div>` : ''}
                 <div class="usual-order">🍽️ ${safeUsualOrder}</div>
                 <div>
                     <span class="order-count">${customer.orderCount || 1} order${customer.orderCount !== 1 ? 's' : ''}</span>
@@ -715,9 +702,23 @@
             document.getElementById('customerName').value = '';
             document.getElementById('phone').value = '';
             document.getElementById('postcode').value = '';
+            document.getElementById('houseNumber').value = '';
             document.getElementById('usualOrder').value = '';
-            const addressContainer = document.getElementById('addressContainer');
-            if (addressContainer) addressContainer.innerHTML = '';
+            
+            // Reset address fields to read-only
+            const addressFields = ['streetName', 'area', 'city', 'county', 'country'];
+            addressFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                field.value = '';
+                field.readOnly = true;
+                field.style.backgroundColor = '#f5f5f5';
+                field.style.borderColor = '#ddd';
+                field.style.color = '#666';
+            });
+            
+            // Remove any popups
+            const popup = document.getElementById('addressDetailsPopup');
+            if (popup) popup.remove();
         }
         
         function updateCustomerCount() {
@@ -757,9 +758,24 @@
         }
         
         // ========== UTILITY FUNCTIONS ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
         function showMessage(text, type) {
+            // Remove existing message
+            const existingMsg = document.querySelector('.flash-message');
+            if (existingMsg) existingMsg.remove();
+            
             const message = document.createElement('div');
             message.textContent = text;
+            message.className = 'flash-message';
             message.style.cssText = `
                 position: fixed;
                 top: 20px;
@@ -782,52 +798,6 @@
             }, 3000);
         }
         
-        function addSampleCustomers() {
-            if (customers.length === 0) {
-                customers = [
-                    {
-                        id: Date.now() + 1,
-                        name: "John Smith",
-                        phone: "07123456789",
-                        postcode: "SW1A 1AA",
-                        address: "10 Downing Street\nLondon",
-                        usualOrder: "Large Pepperoni Pizza, Coke",
-                        orderCount: 15,
-                        dateAdded: new Date().toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
-                    },
-                    {
-                        id: Date.now() + 2,
-                        name: "Sarah Johnson",
-                        phone: "07456789123",
-                        postcode: "W1J 7NT",
-                        address: "23 Regent Street\nLondon",
-                        usualOrder: "Chicken Tikka Masala, Naan Bread",
-                        orderCount: 8,
-                        dateAdded: new Date().toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })
-                    }
-                ];
-                
-                saveToStorage();
-                refreshCustomerList();
-                updateCustomerCount();
-                showMessage('✨ Sample customers loaded!', 'success');
-            } else {
-                alert('You already have customers! Clear them first if you want samples.');
-            }
-        }
-        
         // ========== CSS ANIMATIONS ==========
         if (!document.querySelector('#animations')) {
             const style = document.createElement('style');
@@ -841,14 +811,6 @@
                     from { transform: translateX(0); opacity: 1; }
                     to { transform: translateX(100%); opacity: 0; }
                 }
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(-20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes fadeOut {
-                    from { opacity: 1; transform: translateY(0); }
-                    to { opacity: 0; transform: translateY(-20px); }
-                }
             `;
             document.head.appendChild(style);
         }
@@ -857,6 +819,37 @@
         console.log('saveCustomer function available:', typeof saveCustomer);
         console.log('customers array initialized:', customers);
         console.log('Page initialization complete');
+        
+        // Add sample data function (optional)
+        function addSampleCustomers() {
+            if (customers.length === 0) {
+                customers = [
+                    {
+                        id: Date.now() + 1,
+                        name: "John Smith",
+                        phone: "07123456789",
+                        postcode: "SW1A 1AA",
+                        houseNumber: "10",
+                        streetName: "Downing Street",
+                        area: "Westminster",
+                        city: "London",
+                        county: "Greater London",
+                        country: "United Kingdom",
+                        address: "10 Downing Street\nWestminster\nLondon\nGreater London\nUnited Kingdom\nSW1A 1AA",
+                        usualOrder: "Large Pepperoni Pizza, Coke",
+                        orderCount: 15,
+                        dateAdded: new Date().toLocaleDateString('en-GB')
+                    }
+                ];
+                
+                saveToStorage();
+                refreshCustomerList();
+                updateCustomerCount();
+                showMessage('✨ Sample customer loaded!', 'success');
+            } else {
+                alert('You already have customers!');
+            }
+        }
     </script>
 </body>
 </html>
