@@ -303,6 +303,7 @@
         let customers = [];
         
         // ========== INITIALIZATION ==========
+        // Load customers when page loads
         document.addEventListener('DOMContentLoaded', function() {
             loadFromStorage();
             updateCustomerCount();
@@ -420,6 +421,7 @@
         }
         
         function escapeHtml(text) {
+            if (!text) return '';
             return text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -538,6 +540,8 @@
         
         // ========== CUSTOMER MANAGEMENT FUNCTIONS ==========
         function saveCustomer() {
+            console.log('saveCustomer called'); // Debug
+            
             const name = document.getElementById('customerName').value.trim();
             const phone = document.getElementById('phone').value.trim();
             const postcode = document.getElementById('postcode').value.trim();
@@ -545,11 +549,14 @@
             const addressField = document.getElementById('address');
             const address = addressField ? addressField.value.trim() : '';
             
+            console.log('Form values:', {name, phone, postcode, usualOrder, address}); // Debug
+            
             if (!name || !phone) {
                 alert('⚠️ Please fill in at least Name and Phone Number!');
                 return;
             }
             
+            // Create customer object
             const customer = {
                 id: Date.now(),
                 name: name,
@@ -567,15 +574,28 @@
                 })
             };
             
+            console.log('New customer:', customer); // Debug
+            
+            // Add to array
             customers.push(customer);
+            console.log('Customers array:', customers); // Debug
+            
+            // Save to storage
             saveToStorage();
+            
+            // Clear form
             clearForm();
+            
+            // Update display
             displayCustomer(customer);
             updateCustomerCount();
+            
+            // Show success message
             showMessage(`✅ ${name} saved successfully!`, 'success');
         }
         
         function displayCustomer(customer) {
+            console.log('Displaying customer:', customer); // Debug
             document.getElementById('emptyState').style.display = 'none';
             
             const card = document.createElement('div');
@@ -628,6 +648,7 @@
                 document.getElementById('emptyState').style.display = 'block';
             } else {
                 document.getElementById('emptyState').style.display = 'none';
+                // Display all customers (newest first)
                 [...customers].reverse().forEach(displayCustomer);
             }
         }
@@ -647,13 +668,16 @@
         
         // ========== STORAGE FUNCTIONS ==========
         function saveToStorage() {
+            console.log('Saving to storage:', customers); // Debug
             localStorage.setItem('restaurantCustomers', JSON.stringify(customers));
         }
         
         function loadFromStorage() {
+            console.log('Loading from storage...'); // Debug
             const saved = localStorage.getItem('restaurantCustomers');
             if (saved) {
                 customers = JSON.parse(saved);
+                console.log('Loaded customers:', customers); // Debug
                 refreshCustomerList();
             }
         }
@@ -713,6 +737,8 @@
                 refreshCustomerList();
                 updateCustomerCount();
                 showMessage('✨ Sample customers loaded!', 'success');
+            } else {
+                alert('You already have customers! Clear them first if you want samples.');
             }
         }
         
@@ -740,6 +766,10 @@
             `;
             document.head.appendChild(style);
         }
+        
+        // Debug: Check if functions are available
+        console.log('saveCustomer function available:', typeof saveCustomer);
+        console.log('customers array initialized:', customers);
     </script>
 </body>
 </html>
