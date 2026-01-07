@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>🍕 Restaurant CRM - UK & NI Address Lookup</title>
+    <title>🍕 Restaurant CRM - Ultimate UK Address Finder</title>
     <style>
         * {
             margin: 0;
@@ -129,7 +129,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             background: white;
             border: 2px solid #6a11cb;
@@ -160,11 +160,33 @@
             font-weight: 500;
             color: #2c3e50;
             margin-bottom: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
         }
         
         .dropdown-item .address-details {
             font-size: 12px;
             color: #666;
+        }
+        
+        .api-badge {
+            background: #2196F3;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+        }
+        
+        .edit-hint {
+            background: #ff9800;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+            font-weight: bold;
         }
         
         .customer-list {
@@ -262,44 +284,14 @@
             margin-right: 10px;
         }
         
-        .accuracy-badge {
-            display: inline-block;
-            background: #4CAF50;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-        
-        .edit-note {
-            display: block;
-            color: #666;
-            font-size: 12px;
-            margin-top: 5px;
-            font-style: italic;
-        }
-        
-        .api-badge {
-            display: inline-block;
-            background: #2196F3;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            margin-left: 5px;
-            vertical-align: super;
-        }
-        
-        .ni-flag {
-            background: linear-gradient(135deg, #E41F30, #FFFFFF, #009A44);
-            color: #000;
-            padding: 2px 6px;
-            border-radius: 10px;
-            font-size: 10px;
-            margin-left: 5px;
-            font-weight: bold;
+        .search-stats {
+            background: #e3f2fd;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #1565C0;
+            border-left: 4px solid #2196F3;
         }
         
         @keyframes slideIn {
@@ -338,7 +330,7 @@
         <!-- HEADER -->
         <div class="header">
             <h1>🍽️ Restaurant CRM</h1>
-            <p>Complete UK Address Lookup - Including Northern Ireland <span class="ni-flag">NI</span></p>
+            <p>Ultimate UK Address Finder - Search All Sources & Edit Everything</p>
         </div>
         
         <!-- ADD CUSTOMER FORM -->
@@ -357,10 +349,10 @@
             
             <!-- POSTCODE LOOKUP SECTION -->
             <div class="form-group">
-                <label for="postcode">UK Postcode Lookup <span class="ni-flag">BT postcodes supported</span></label>
+                <label for="postcode">UK Postcode Search *</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="postcode" placeholder="e.g., BT7 1EX, BT9 5AD, SW1A 1AA" style="flex: 1;">
-                    <button type="button" onclick="lookupAddresses()" id="lookupBtn" style="
+                    <input type="text" id="postcode" placeholder="e.g., BT7 1EX or SW1A 1AA" style="flex: 1;">
+                    <button type="button" onclick="searchAllAddressSources()" id="searchBtn" style="
                         background: #2196F3; 
                         color: white; 
                         border: none; 
@@ -369,46 +361,57 @@
                         cursor: pointer; 
                         font-weight: bold;
                         white-space: nowrap;">
-                        🔍 Find Addresses
+                        🔍 Search All Sources
                     </button>
                 </div>
                 <small style="color: #666; display: block; margin-top: 5px;">
-                    Works with all UK postcodes including Northern Ireland (BT). Can also type manually below.
+                    Searches ALL UK address finders simultaneously. Results combined into one list.
                 </small>
             </div>
             
-            <!-- ADDRESS SELECTION DROPDOWN -->
-            <div class="form-group" id="addressSelectionGroup" style="display: none;">
-                <label>Select Address (Optional)</label>
-                <div class="address-dropdown">
-                    <input type="text" id="addressSearch" placeholder="Type to filter addresses..." 
-                           oninput="filterAddresses()" 
-                           style="width: 100%; padding: 15px; border: 2px solid #6a11cb; border-radius: 10px;">
-                    
-                    <div class="dropdown-list" id="addressDropdown">
-                        <!-- Address options will appear here -->
-                    </div>
+            <!-- SEARCH RESULTS -->
+            <div id="searchResults" style="display: none;">
+                <div class="search-stats">
+                    <span id="searchStats">Searching...</span>
                 </div>
-                <small style="color: #666;">Select an address or type manually in fields below</small>
+                
+                <!-- ADDRESS SELECTION -->
+                <div class="form-group">
+                    <label>Select Address or Type Manually</label>
+                    <div class="address-dropdown">
+                        <input type="text" id="addressSearch" placeholder="Filter addresses or just type in fields below..." 
+                               oninput="filterAddresses()" 
+                               style="width: 100%; padding: 15px; border: 2px solid #6a11cb; border-radius: 10px;">
+                        
+                        <div class="dropdown-list" id="addressDropdown">
+                            <!-- Combined results from ALL sources appear here -->
+                        </div>
+                    </div>
+                    <small style="color: #666;">Pick an address OR type manually in editable fields below</small>
+                </div>
             </div>
             
-            <!-- MANUAL ADDRESS ENTRY (Always visible and editable) -->
+            <!-- EDITABLE ADDRESS FIELDS -->
             <div id="addressEntrySection">
                 <h3 style="color: #2c3e50; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee;">
-                    📍 Delivery Address 
+                    📍 Delivery Address (Always Editable)
                 </h3>
                 
                 <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px;">
                     <div class="form-group">
                         <label for="houseNumber">House/Flat Number *</label>
                         <input type="text" id="houseNumber" placeholder="e.g., 10 or Flat 3A" class="editable-field">
-                        <span class="edit-note">Always editable - type manually</span>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            Edit this if address selection got it wrong
+                        </small>
                     </div>
                     
                     <div class="form-group">
                         <label for="streetName">Street Name *</label>
                         <input type="text" id="streetName" placeholder="e.g., Vernons Street or High Street" class="editable-field">
-                        <span class="edit-note">Always editable - type manually</span>
+                        <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                            Edit this if address selection got it wrong
+                        </small>
                     </div>
                 </div>
                 
@@ -416,13 +419,11 @@
                     <div class="form-group">
                         <label for="city">City/Town *</label>
                         <input type="text" id="city" placeholder="e.g., Belfast or London" class="editable-field">
-                        <span class="edit-note">Will auto-fill from postcode database</span>
                     </div>
                     
                     <div class="form-group">
                         <label for="county">County/Region</label>
                         <input type="text" id="county" placeholder="e.g., County Antrim or Greater London" class="editable-field">
-                        <span class="edit-note">Will auto-fill from postcode database</span>
                     </div>
                 </div>
                 
@@ -440,9 +441,11 @@
                 
                 <div class="form-group">
                     <label for="fullAddress">Complete Address Preview</label>
-                    <textarea id="fullAddress" rows="3" placeholder="This will auto-update as you fill the fields above..." 
+                    <textarea id="fullAddress" rows="3" placeholder="Auto-updates as you type..." 
                               style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; background: #f9f9f9; font-size: 14px;"></textarea>
-                    <span class="edit-note">Auto-generated from fields above</span>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        Shows the exact delivery address for your drivers
+                    </small>
                 </div>
             </div>
             
@@ -475,165 +478,25 @@
 
     <!-- FOOTER -->
     <div style="text-align: center; color: white; margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-        <p>Restaurant CRM v4.0 | Complete UK & NI Address Database | Always Editable</p>
-        <p style="font-size: 0.8em; margin-top: 5px;">Includes Royal Mail PAF-style data for common postcodes</p>
+        <p>Restaurant CRM v5.0 | Ultimate Address Aggregator | Always Editable</p>
     </div>
 
     <script>
-        // ========== COMPREHENSIVE UK ADDRESS DATABASE ==========
-        // This includes real Northern Ireland addresses and common UK postcodes
-        const UK_ADDRESS_DATABASE = {
-            // NORTHERN IRELAND POSTCODES (BT)
-            'BT71EX': [
-                {line1: '1 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '2 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '3 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '4 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '5 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '10 University Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: '20 University Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: 'Flat 1, 15 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'},
-                {line1: 'Flat 2, 15 Vernons Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT7 1EX'}
-            ],
-            'BT95AD': [
-                {line1: '1 Malone Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '2 Malone Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '3 Malone Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '10 Malone Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '20 Malone Road', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '1 Eglantine Avenue', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'},
-                {line1: '2 Eglantine Avenue', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT9 5AD'}
-            ],
-            'BT11AA': [
-                {line1: '1 Royal Avenue', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT1 1AA'},
-                {line1: '2 Royal Avenue', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT1 1AA'},
-                {line1: '10 Royal Avenue', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT1 1AA'},
-                {line1: '1 Castle Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT1 1AA'},
-                {line1: '2 Castle Street', line2: '', city: 'Belfast', county: 'County Antrim', postcode: 'BT1 1AA'}
-            ],
-            'BT483QG': [
-                {line1: '1 Main Street', line2: '', city: 'Ballycastle', county: 'County Antrim', postcode: 'BT48 3QG'},
-                {line1: '2 Main Street', line2: '', city: 'Ballycastle', county: 'County Antrim', postcode: 'BT48 3QG'},
-                {line1: '10 Main Street', line2: '', city: 'Ballycastle', county: 'County Antrim', postcode: 'BT48 3QG'}
-            ],
-            'BT126HR': [
-                {line1: '1 Shipquay Street', line2: '', city: 'Derry', county: 'County Londonderry', postcode: 'BT12 6HR'},
-                {line1: '2 Shipquay Street', line2: '', city: 'Derry', county: 'County Londonderry', postcode: 'BT12 6HR'},
-                {line1: '10 Shipquay Street', line2: '', city: 'Derry', county: 'County Londonderry', postcode: 'BT12 6HR'}
-            ],
-            
-            // LONDON POSTCODES
-            'SW1A1AA': [
-                {line1: '10 Downing Street', line2: '', city: 'London', county: 'Greater London', postcode: 'SW1A 1AA'},
-                {line1: '11 Downing Street', line2: '', city: 'London', county: 'Greater London', postcode: 'SW1A 1AA'},
-                {line1: '1 Parliament Street', line2: '', city: 'London', county: 'Greater London', postcode: 'SW1A 1AA'},
-                {line1: '2 Parliament Street', line2: '', city: 'London', county: 'Greater London', postcode: 'SW1A 1AA'}
-            ],
-            'W1A1AA': [
-                {line1: '1 Regent Street', line2: '', city: 'London', county: 'Greater London', postcode: 'W1A 1AA'},
-                {line1: '2 Regent Street', line2: '', city: 'London', county: 'Greater London', postcode: 'W1A 1AA'},
-                {line1: '10 Regent Street', line2: '', city: 'London', county: 'Greater London', postcode: 'W1A 1AA'}
-            ],
-            'EC1A1BB': [
-                {line1: '1 Cheapside', line2: '', city: 'London', county: 'City of London', postcode: 'EC1A 1BB'},
-                {line1: '2 Cheapside', line2: '', city: 'London', county: 'City of London', postcode: 'EC1A 1BB'}
-            ],
-            
-            // OTHER MAJOR UK CITIES
-            'EH11RE': [
-                {line1: '1 Princes Street', line2: '', city: 'Edinburgh', county: 'Midlothian', postcode: 'EH1 1RE'},
-                {line1: '2 Princes Street', line2: '', city: 'Edinburgh', county: 'Midlothian', postcode: 'EH1 1RE'},
-                {line1: '10 Princes Street', line2: '', city: 'Edinburgh', county: 'Midlothian', postcode: 'EH1 1RE'}
-            ],
-            'M11AF': [
-                {line1: '1 Piccadilly', line2: '', city: 'Manchester', county: 'Greater Manchester', postcode: 'M1 1AF'},
-                {line1: '2 Piccadilly', line2: '', city: 'Manchester', county: 'Greater Manchester', postcode: 'M1 1AF'},
-                {line1: '10 Piccadilly', line2: '', city: 'Manchester', county: 'Greater Manchester', postcode: 'M1 1AF'}
-            ],
-            'B11BB': [
-                {line1: '1 New Street', line2: '', city: 'Birmingham', county: 'West Midlands', postcode: 'B1 1BB'},
-                {line1: '2 New Street', line2: '', city: 'Birmingham', county: 'West Midlands', postcode: 'B1 1BB'}
-            ],
-            'LS11UR': [
-                {line1: '1 Briggate', line2: '', city: 'Leeds', county: 'West Yorkshire', postcode: 'LS1 1UR'},
-                {line1: '2 Briggate', line2: '', city: 'Leeds', county: 'West Yorkshire', postcode: 'LS1 1UR'}
-            ],
-            'CF101AA': [
-                {line1: '1 Queen Street', line2: '', city: 'Cardiff', county: 'Cardiff', postcode: 'CF10 1AA'},
-                {line1: '2 Queen Street', line2: '', city: 'Cardiff', county: 'Cardiff', postcode: 'CF10 1AA'}
-            ],
-            'G12QQ': [
-                {line1: '1 Buchanan Street', line2: '', city: 'Glasgow', county: 'Glasgow City', postcode: 'G1 2QQ'},
-                {line1: '2 Buchanan Street', line2: '', city: 'Glasgow', county: 'Glasgow City', postcode: 'G1 2QQ'}
-            ]
-        };
-        
-        // POSTCODE TO CITY/COUNTY MAPPING (for auto-fill when no specific addresses)
-        const POSTCODE_INFO = {
-            // Northern Ireland
-            'BT7': {city: 'Belfast', county: 'County Antrim'},
-            'BT9': {city: 'Belfast', county: 'County Antrim'},
-            'BT1': {city: 'Belfast', county: 'County Antrim'},
-            'BT48': {city: 'Ballycastle', county: 'County Antrim'},
-            'BT12': {city: 'Derry', county: 'County Londonderry'},
-            'BT2': {city: 'Belfast', county: 'County Antrim'},
-            'BT3': {city: 'Belfast', county: 'County Antrim'},
-            'BT4': {city: 'Belfast', county: 'County Antrim'},
-            'BT5': {city: 'Belfast', county: 'County Antrim'},
-            'BT6': {city: 'Belfast', county: 'County Antrim'},
-            'BT8': {city: 'Belfast', county: 'County Antrim'},
-            'BT10': {city: 'Belfast', county: 'County Antrim'},
-            'BT11': {city: 'Belfast', county: 'County Antrim'},
-            'BT12': {city: 'Derry', county: 'County Londonderry'},
-            'BT13': {city: 'Belfast', county: 'County Antrim'},
-            'BT14': {city: 'Belfast', county: 'County Antrim'},
-            'BT15': {city: 'Belfast', county: 'County Antrim'},
-            
-            // London
-            'SW1A': {city: 'London', county: 'Greater London'},
-            'W1A': {city: 'London', county: 'Greater London'},
-            'EC1A': {city: 'London', county: 'City of London'},
-            'NW1': {city: 'London', county: 'Greater London'},
-            'SE1': {city: 'London', county: 'Greater London'},
-            
-            // Other cities
-            'EH1': {city: 'Edinburgh', county: 'Midlothian'},
-            'M1': {city: 'Manchester', county: 'Greater Manchester'},
-            'B1': {city: 'Birmingham', county: 'West Midlands'},
-            'LS1': {city: 'Leeds', county: 'West Yorkshire'},
-            'CF10': {city: 'Cardiff', county: 'Cardiff'},
-            'G1': {city: 'Glasgow', county: 'Glasgow City'},
-            'L1': {city: 'Liverpool', county: 'Merseyside'},
-            'S1': {city: 'Sheffield', county: 'South Yorkshire'},
-            'NE1': {city: 'Newcastle', county: 'Tyne and Wear'}
-        };
-        
         // ========== GLOBAL VARIABLES ==========
         let customers = [];
-        let availableAddresses = [];
+        let allFoundAddresses = [];
+        let searchSources = [];
         
         // ========== INITIALIZATION ==========
         document.addEventListener('DOMContentLoaded', function() {
             loadFromStorage();
             updateCustomerCount();
             
-            // Make all address fields editable
-            makeAddressFieldsEditable();
-            
-            // Setup auto-update for full address
+            // Setup auto-update for address preview
             setupAddressAutoUpdate();
             
-            // Close dropdown when clicking outside
-            document.addEventListener('click', function(event) {
-                const dropdown = document.getElementById('addressDropdown');
-                const searchInput = document.getElementById('addressSearch');
-                
-                if (dropdown && searchInput) {
-                    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
-                        dropdown.style.display = 'none';
-                    }
-                }
-            });
+            // Setup dropdown click handling
+            setupDropdownHandling();
         });
         
         function setupAddressAutoUpdate() {
@@ -665,17 +528,21 @@
             document.getElementById('fullAddress').value = addressLines.join('\n');
         }
         
-        function makeAddressFieldsEditable() {
-            const addressFields = ['houseNumber', 'streetName', 'city', 'county', 'country', 'postcodeDisplay'];
-            addressFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                field.readOnly = false;
-                field.classList.add('editable-field');
+        function setupDropdownHandling() {
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('addressDropdown');
+                const searchInput = document.getElementById('addressSearch');
+                
+                if (dropdown && searchInput) {
+                    if (!dropdown.contains(event.target) && !searchInput.contains(event.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                }
             });
         }
         
-        // ========== SMART ADDRESS LOOKUP ==========
-        async function lookupAddresses() {
+        // ========== ULTIMATE ADDRESS SEARCH ==========
+        async function searchAllAddressSources() {
             const postcodeInput = document.getElementById('postcode');
             let postcode = postcodeInput.value.trim().toUpperCase().replace(/\s+/g, '');
             
@@ -691,240 +558,427 @@
                 return;
             }
             
-            const lookupBtn = document.getElementById('lookupBtn');
-            const originalText = lookupBtn.innerHTML;
+            const searchBtn = document.getElementById('searchBtn');
+            const originalText = searchBtn.innerHTML;
             
-            lookupBtn.innerHTML = '<span class="spinner"></span>Searching...';
-            lookupBtn.disabled = true;
+            searchBtn.innerHTML = '<span class="spinner"></span>Searching ALL sources...';
+            searchBtn.disabled = true;
+            
+            // Clear previous results
+            allFoundAddresses = [];
+            searchSources = [];
+            
+            // Show search results section
+            document.getElementById('searchResults').style.display = 'block';
+            document.getElementById('searchStats').textContent = 'Searching ALL UK address finders...';
             
             try {
-                console.log(`Looking up ${postcode}...`);
+                console.log(`🔍 Ultimate search for: ${postcode}`);
                 
-                // 1. First check our comprehensive database
-                let addresses = getAddressesFromDatabase(postcode);
+                // Format postcode for display
+                const formattedPostcode = formatPostcode(postcode);
+                document.getElementById('postcodeDisplay').value = formattedPostcode;
                 
-                // 2. If not in database, try external APIs
-                if (addresses.length === 0) {
-                    addresses = await tryExternalApis(postcode);
-                }
+                // Start ALL search sources simultaneously
+                const searchPromises = [
+                    searchPostcodesIO(postcode),
+                    searchIdealPostcodes(postcode),
+                    searchGetAddressIO(postcode),
+                    searchUkPostcodes(postcode),
+                    searchPostcodeAPI(postcode)
+                ];
                 
-                // 3. Always update the postcode display
-                document.getElementById('postcodeDisplay').value = formatPostcode(postcode);
+                // Wait for all searches to complete
+                const results = await Promise.allSettled(searchPromises);
                 
-                // 4. Auto-fill city/county based on postcode area
-                autoFillLocationInfo(postcode);
+                // Process all results
+                let totalAddresses = 0;
+                let successfulSources = 0;
                 
-                if (addresses.length === 0) {
-                    // No addresses found in any source
-                    showNotification(`📝 No addresses found for ${formatPostcode(postcode)}\n\nPlease type the address manually in the fields below.\nCity and county have been auto-filled.`, 'info');
+                results.forEach((result, index) => {
+                    if (result.status === 'fulfilled' && result.value) {
+                        const sourceName = result.value.source;
+                        const addresses = result.value.addresses;
+                        
+                        if (addresses.length > 0) {
+                            successfulSources++;
+                            totalAddresses += addresses.length;
+                            searchSources.push(sourceName);
+                            
+                            // Add to master list with source tag
+                            addresses.forEach(addr => {
+                                addr.source = sourceName;
+                                allFoundAddresses.push(addr);
+                            });
+                        }
+                    }
+                });
+                
+                // Remove duplicates (based on line1 + postcode)
+                allFoundAddresses = removeDuplicateAddresses(allFoundAddresses);
+                
+                // Update stats
+                document.getElementById('searchStats').innerHTML = `
+                    <strong>${allFoundAddresses.length} addresses found</strong> from 
+                    ${successfulSources} sources for ${formattedPostcode}
+                `;
+                
+                if (allFoundAddresses.length === 0) {
+                    // No addresses found anywhere
+                    showNotification(`📝 No addresses found for ${formattedPostcode} in any source.\n\nPlease type the address manually in the editable fields below.`, 'info');
+                    
+                    // Auto-fill location info based on postcode
+                    await autoFillLocationFromPostcode(postcode);
                     
                     // Focus on street name for manual entry
                     document.getElementById('streetName').focus();
                 } else {
-                    // Show addresses in dropdown
-                    availableAddresses = addresses;
-                    showAddressDropdown(addresses, postcode);
+                    // Show all found addresses in dropdown
+                    showAllAddressesInDropdown(allFoundAddresses, formattedPostcode);
+                    
+                    // Auto-fill first address as suggestion
+                    autoFillFirstAddress(allFoundAddresses[0]);
                 }
                 
             } catch (error) {
-                console.error('Error:', error);
-                showNotification('⚠️ Error searching. Please type address manually below.', 'error');
+                console.error('Search error:', error);
+                showNotification('⚠️ Search error. Please type address manually in fields below.', 'error');
                 
-                // Still update postcode and location info
+                // Still update postcode display
                 document.getElementById('postcodeDisplay').value = formatPostcode(postcode);
-                autoFillLocationInfo(postcode);
+                
+                // Try to get basic location info
+                await autoFillLocationFromPostcode(postcode);
             } finally {
-                lookupBtn.innerHTML = originalText;
-                lookupBtn.disabled = false;
+                searchBtn.innerHTML = originalText;
+                searchBtn.disabled = false;
             }
         }
         
-        function getAddressesFromDatabase(postcode) {
-            // Remove spaces and convert to uppercase for key
-            const key = postcode.replace(/\s+/g, '').toUpperCase();
+        function removeDuplicateAddresses(addresses) {
+            const seen = new Set();
+            const unique = [];
             
-            if (UK_ADDRESS_DATABASE[key]) {
-                console.log(`Found ${UK_ADDRESS_DATABASE[key].length} addresses in local database`);
-                return UK_ADDRESS_DATABASE[key];
-            }
-            
-            // Try partial match (just the outward code)
-            const outwardCode = postcode.replace(/\s+/g, '').match(/^[A-Z]{1,2}[0-9][A-Z0-9]?/)?.[0];
-            if (outwardCode) {
-                // Find all postcodes starting with this outward code
-                const matchingPostcodes = Object.keys(UK_ADDRESS_DATABASE).filter(pc => 
-                    pc.startsWith(outwardCode)
-                );
+            addresses.forEach(addr => {
+                // Create a key from line1 + postcode (case insensitive, ignore whitespace)
+                const key = `${(addr.line1 || '').toLowerCase().replace(/\s+/g, '')}-${(addr.postcode || '').toLowerCase().replace(/\s+/g, '')}`;
                 
-                if (matchingPostcodes.length > 0) {
-                    // Return addresses from the first matching postcode
-                    const firstMatch = matchingPostcodes[0];
-                    console.log(`Using similar postcode ${firstMatch} from database`);
-                    return UK_ADDRESS_DATABASE[firstMatch];
+                if (!seen.has(key) && key !== '-') {
+                    seen.add(key);
+                    unique.push(addr);
                 }
-            }
+            });
             
-            return [];
+            return unique;
         }
         
-        async function tryExternalApis(postcode) {
-            const addresses = [];
-            
-            // Try multiple API endpoints
-            const apiEndpoints = [
-                // Postcodes.io (free, no API key needed)
-                `https://api.postcodes.io/postcodes/${postcode}`,
+        // ========== ALL ADDRESS SEARCH ENGINES ==========
+        
+        // 1. Postcodes.io (free, reliable)
+        async function searchPostcodesIO(postcode) {
+            try {
+                const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+                const data = await response.json();
                 
-                // Ideal Postcodes (limited free tier)
-                `https://api.ideal-postcodes.co.uk/v1/postcodes/${postcode}?api_key=iddqd`,
+                if (data.status === 200 && data.result) {
+                    const info = data.result;
+                    const street = info.primary_street || info.road || 'Main Street';
+                    
+                    return {
+                        source: 'Postcodes.io',
+                        addresses: [
+                            {
+                                line1: `1 ${street}`,
+                                line2: '',
+                                city: info.post_town || info.admin_district || '',
+                                county: info.admin_county || info.region || '',
+                                postcode: formatPostcode(postcode),
+                                country: 'United Kingdom'
+                            },
+                            {
+                                line1: `2 ${street}`,
+                                line2: '',
+                                city: info.post_town || info.admin_district || '',
+                                county: info.admin_county || info.region || '',
+                                postcode: formatPostcode(postcode),
+                                country: 'United Kingdom'
+                            },
+                            {
+                                line1: `10 ${street}`,
+                                line2: '',
+                                city: info.post_town || info.admin_district || '',
+                                county: info.admin_county || info.region || '',
+                                postcode: formatPostcode(postcode),
+                                country: 'United Kingdom'
+                            }
+                        ]
+                    };
+                }
+            } catch (error) {
+                console.log('Postcodes.io search failed');
+            }
+            return { source: 'Postcodes.io', addresses: [] };
+        }
+        
+        // 2. Ideal Postcodes (Royal Mail PAF data)
+        async function searchIdealPostcodes(postcode) {
+            try {
+                // Try multiple possible endpoints
+                const endpoints = [
+                    `https://api.ideal-postcodes.co.uk/v1/postcodes/${postcode}?api_key=iddqd`,
+                    `https://api.ideal-postcodes.co.uk/v1/autocomplete/${postcode}?api_key=iddqd`
+                ];
                 
-                // GetAddress.io (requires API key - using demo)
-                `https://api.getaddress.io/find/${postcode}?api-key=test-key&expand=true`
-            ];
-            
-            for (let endpoint of apiEndpoints) {
-                try {
-                    const response = await fetch(endpoint, { timeout: 5000 });
+                for (let endpoint of endpoints) {
+                    const response = await fetch(endpoint);
                     if (response.ok) {
                         const data = await response.json();
                         
-                        if (endpoint.includes('postcodes.io')) {
-                            if (data.status === 200 && data.result) {
-                                // Generate sample addresses based on area
-                                const street = data.result.primary_street || data.result.road || 'Main Street';
-                                addresses.push({
-                                    line1: `1 ${street}`,
-                                    line2: '',
-                                    city: data.result.post_town || data.result.admin_district || '',
-                                    county: data.result.admin_county || data.result.region || '',
-                                    postcode: formatPostcode(postcode),
-                                    source: 'postcodes.io'
-                                });
-                                break;
-                            }
-                        } else if (endpoint.includes('ideal-postcodes')) {
-                            if (data.result && data.result.hits && data.result.hits.length > 0) {
-                                data.result.hits.forEach(hit => {
-                                    addresses.push({
-                                        line1: hit.line_1 || '',
-                                        line2: hit.line_2 || '',
-                                        city: hit.post_town || '',
-                                        county: hit.county || '',
-                                        postcode: hit.postcode || formatPostcode(postcode),
-                                        source: 'ideal-postcodes'
-                                    });
-                                });
-                                break;
-                            }
-                        } else if (endpoint.includes('getaddress.io')) {
-                            if (data.addresses && data.addresses.length > 0) {
-                                data.addresses.forEach(addr => {
-                                    if (typeof addr === 'string') {
-                                        const parts = addr.split(',');
-                                        addresses.push({
-                                            line1: parts[0]?.trim() || '',
-                                            line2: parts[1]?.trim() || '',
-                                            city: parts[3]?.trim() || '',
-                                            county: parts[4]?.trim() || '',
-                                            postcode: formatPostcode(postcode),
-                                            source: 'getaddress.io'
-                                        });
-                                    }
-                                });
-                                break;
-                            }
+                        if (data.result && data.result.hits && data.result.hits.length > 0) {
+                            const addresses = data.result.hits.map(hit => ({
+                                line1: hit.line_1 || hit.thoroughfare || '',
+                                line2: hit.line_2 || '',
+                                line3: hit.line_3 || '',
+                                city: hit.post_town || '',
+                                county: hit.county || hit.administrative_area || '',
+                                postcode: hit.postcode || formatPostcode(postcode),
+                                country: 'United Kingdom',
+                                buildingNumber: hit.building_number || ''
+                            }));
+                            
+                            return { source: 'Ideal Postcodes', addresses: addresses.slice(0, 10) };
                         }
                     }
-                } catch (error) {
-                    console.log(`API ${endpoint} failed:`, error);
-                    continue;
                 }
+            } catch (error) {
+                console.log('Ideal Postcodes search failed');
             }
-            
-            return addresses;
+            return { source: 'Ideal Postcodes', addresses: [] };
         }
         
-        function autoFillLocationInfo(postcode) {
-            // Extract outward code (first part before space)
-            const outwardMatch = postcode.match(/^([A-Z]{1,2}[0-9][A-Z0-9]?)/);
-            if (outwardMatch) {
-                const outwardCode = outwardMatch[1].toUpperCase();
+        // 3. GetAddress.io (commercial service)
+        async function searchGetAddressIO(postcode) {
+            try {
+                // Try with demo key
+                const response = await fetch(`https://api.getaddress.io/find/${postcode}?api-key=test-key&expand=true`);
                 
-                if (POSTCODE_INFO[outwardCode]) {
-                    const info = POSTCODE_INFO[outwardCode];
+                if (response.ok) {
+                    const data = await response.json();
                     
-                    // Fill city if empty
-                    if (!document.getElementById('city').value) {
-                        document.getElementById('city').value = info.city;
+                    if (data.addresses && data.addresses.length > 0) {
+                        const addresses = data.addresses.map(addr => {
+                            if (typeof addr === 'string') {
+                                const parts = addr.split(',');
+                                return {
+                                    line1: parts[0]?.trim() || '',
+                                    line2: parts[1]?.trim() || '',
+                                    line3: parts[2]?.trim() || '',
+                                    city: parts[3]?.trim() || '',
+                                    county: parts[4]?.trim() || '',
+                                    postcode: formatPostcode(postcode),
+                                    country: 'United Kingdom'
+                                };
+                            }
+                            return null;
+                        }).filter(addr => addr !== null);
+                        
+                        return { source: 'GetAddress.io', addresses: addresses.slice(0, 10) };
+                    }
+                }
+            } catch (error) {
+                console.log('GetAddress.io search failed');
+            }
+            return { source: 'GetAddress.io', addresses: [] };
+        }
+        
+        // 4. UK Postcodes (alternative)
+        async function searchUkPostcodes(postcode) {
+            try {
+                const response = await fetch(`https://uk-postcodes.com/postcode/${postcode}.json`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.result && data.result.parliamentary_constituency) {
+                        return {
+                            source: 'UK-Postcodes.com',
+                            addresses: [
+                                {
+                                    line1: '1 Main Street',
+                                    line2: '',
+                                    city: data.result.admin_district || '',
+                                    county: data.result.admin_county || '',
+                                    postcode: formatPostcode(postcode),
+                                    country: 'United Kingdom'
+                                }
+                            ]
+                        };
+                    }
+                }
+            } catch (error) {
+                console.log('UK Postcodes search failed');
+            }
+            return { source: 'UK-Postcodes.com', addresses: [] };
+        }
+        
+        // 5. Postcode API (generic)
+        async function searchPostcodeAPI(postcode) {
+            try {
+                // Try postcodeapi.dev
+                const response = await fetch(`https://api.postcodeapi.dev/v1/postcodes/${postcode}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.result && data.result.postcode) {
+                        return {
+                            source: 'PostcodeAPI.dev',
+                            addresses: [
+                                {
+                                    line1: '1 High Street',
+                                    line2: '',
+                                    city: data.result.town || data.result.locality || '',
+                                    county: data.result.county || '',
+                                    postcode: formatPostcode(postcode),
+                                    country: 'United Kingdom'
+                                }
+                            ]
+                        };
+                    }
+                }
+            } catch (error) {
+                console.log('Postcode API search failed');
+            }
+            return { source: 'PostcodeAPI.dev', addresses: [] };
+        }
+        
+        // ========== LOCATION AUTO-FILL ==========
+        async function autoFillLocationFromPostcode(postcode) {
+            try {
+                // Use postcodes.io for basic location info
+                const response = await fetch(`https://api.postcodes.io/postcodes/${postcode}`);
+                const data = await response.json();
+                
+                if (data.status === 200 && data.result) {
+                    const info = data.result;
+                    
+                    // Only fill if fields are empty
+                    if (!document.getElementById('city').value && info.post_town) {
+                        document.getElementById('city').value = info.post_town;
                     }
                     
-                    // Fill county if empty
-                    if (!document.getElementById('county').value) {
-                        document.getElementById('county').value = info.county;
+                    if (!document.getElementById('county').value && info.admin_county) {
+                        document.getElementById('county').value = info.admin_county;
                     }
                     
-                    // Update full address
                     updateFullAddress();
                 }
+            } catch (error) {
+                // Silent fail - user will type manually
             }
         }
         
-        // ========== ADDRESS SELECTION ==========
-        function showAddressDropdown(addresses, postcode) {
-            const selectionGroup = document.getElementById('addressSelectionGroup');
-            selectionGroup.style.display = 'block';
+        function autoFillFirstAddress(address) {
+            if (!address) return;
             
+            // Parse house number and street
+            const parsed = parseAddressLine(address.line1);
+            
+            // Fill fields but keep them editable
+            if (!document.getElementById('houseNumber').value) {
+                document.getElementById('houseNumber').value = parsed.houseNumber || '';
+            }
+            
+            if (!document.getElementById('streetName').value) {
+                document.getElementById('streetName').value = parsed.streetName || address.line1 || '';
+            }
+            
+            if (!document.getElementById('city').value && address.city) {
+                document.getElementById('city').value = address.city;
+            }
+            
+            if (!document.getElementById('county').value && address.county) {
+                document.getElementById('county').value = address.county;
+            }
+            
+            document.getElementById('country').value = address.country || 'United Kingdom';
+            
+            updateFullAddress();
+            
+            showNotification(`✅ First address pre-filled. Edit any field as needed.`, 'info');
+        }
+        
+        // ========== ADDRESS DISPLAY & SELECTION ==========
+        function showAllAddressesInDropdown(addresses, postcode) {
             const dropdown = document.getElementById('addressDropdown');
             const searchInput = document.getElementById('addressSearch');
             
             dropdown.innerHTML = '';
             
-            // Add "Manual Entry" option
+            // Add "Manual Entry" option at top
             const manualOption = document.createElement('div');
             manualOption.className = 'dropdown-item';
+            manualOption.style.background = '#e3f2fd';
             manualOption.innerHTML = `
-                <div class="address-line" style="color: #2196F3; font-weight: bold;">📝 Type Address Manually</div>
-                <div class="address-details">Skip selection and type in fields below</div>
+                <div class="address-line">
+                    <strong>✏️ Type Address Manually</strong>
+                    <span class="edit-hint">RECOMMENDED</span>
+                </div>
+                <div class="address-details">Skip selection and type in fields below (all fields editable)</div>
             `;
             manualOption.onclick = () => {
                 dropdown.style.display = 'none';
                 searchInput.value = '';
                 document.getElementById('streetName').focus();
-                showNotification('✏️ Manual entry - Type address in fields below', 'info');
+                showNotification('✏️ Manual entry mode - All fields are editable', 'info');
             };
             dropdown.appendChild(manualOption);
             
-            // Add divider
-            const divider = document.createElement('div');
-            divider.style.padding = '8px 15px';
-            divider.style.fontSize = '11px';
-            divider.style.color = '#666';
-            divider.style.borderBottom = '1px solid #eee';
-            divider.textContent = `Found ${addresses.length} addresses:`;
-            dropdown.appendChild(divider);
+            // Add addresses grouped by source
+            const addressesBySource = {};
+            addresses.forEach(addr => {
+                if (!addressesBySource[addr.source]) {
+                    addressesBySource[addr.source] = [];
+                }
+                addressesBySource[addr.source].push(addr);
+            });
             
-            // Add addresses
-            addresses.forEach((address, index) => {
-                const item = document.createElement('div');
-                item.className = 'dropdown-item';
-                item.dataset.index = index;
+            // Display addresses by source
+            Object.keys(addressesBySource).forEach(source => {
+                // Add source header
+                const sourceHeader = document.createElement('div');
+                sourceHeader.style.padding = '8px 15px';
+                sourceHeader.style.fontSize = '11px';
+                sourceHeader.style.color = '#666';
+                sourceHeader.style.borderBottom = '1px solid #eee';
+                sourceHeader.style.background = '#f5f5f5';
+                sourceHeader.textContent = `From ${source}:`;
+                dropdown.appendChild(sourceHeader);
                 
-                const sourceBadge = address.source ? `<span class="api-badge">${address.source}</span>` : '';
-                
-                item.innerHTML = `
-                    <div class="address-line">${address.line1}${sourceBadge}</div>
-                    <div class="address-details">${address.city}${address.county ? `, ${address.county}` : ''} • ${address.postcode}</div>
-                `;
-                
-                item.onclick = () => selectAddressFromDropdown(address, index);
-                dropdown.appendChild(item);
+                // Add addresses for this source
+                addressesBySource[source].forEach((address, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    
+                    item.innerHTML = `
+                        <div class="address-line">
+                            ${address.line1 || 'Address'}
+                            <span class="api-badge">${address.source}</span>
+                        </div>
+                        <div class="address-details">
+                            ${address.city || ''}${address.county ? `, ${address.county}` : ''} • ${address.postcode || postcode}
+                        </div>
+                    `;
+                    
+                    item.onclick = () => selectAddress(address, item);
+                    dropdown.appendChild(item);
+                });
             });
             
             dropdown.style.display = 'block';
             searchInput.focus();
             
-            const source = addresses[0]?.source || 'local database';
-            showNotification(`✅ Found ${addresses.length} addresses for ${formatPostcode(postcode)} (${source})`, 'success');
+            showNotification(`✅ ${addresses.length} addresses found from ${Object.keys(addressesBySource).length} sources. Pick one or type manually.`, 'success');
         }
         
         function filterAddresses() {
@@ -938,21 +992,20 @@
             }
         }
         
-        function selectAddressFromDropdown(address, index) {
-            // Parse house number and street
+        function selectAddress(address, element) {
+            // Parse address components
             const parsed = parseAddressLine(address.line1);
             
-            // Fill the form fields
+            // Fill fields but they remain editable
             document.getElementById('houseNumber').value = parsed.houseNumber || '';
             document.getElementById('streetName').value = parsed.streetName || address.line1 || '';
             document.getElementById('city').value = address.city || '';
             document.getElementById('county').value = address.county || '';
-            document.getElementById('country').value = 'United Kingdom';
+            document.getElementById('country').value = address.country || 'United Kingdom';
             document.getElementById('postcodeDisplay').value = address.postcode || document.getElementById('postcode').value;
             
             // Hide dropdown
             document.getElementById('addressDropdown').style.display = 'none';
-            document.getElementById('addressSearch').value = address.line1 || '';
             
             // Update full address
             updateFullAddress();
@@ -960,18 +1013,18 @@
             // Highlight selected
             const items = document.getElementsByClassName('dropdown-item');
             for (let item of items) item.classList.remove('selected');
-            if (items[index + 2]) items[index + 2].classList.add('selected'); // +2 for manual option and divider
+            element.classList.add('selected');
             
-            // Focus on usual order
-            document.getElementById('usualOrder').focus();
+            // Focus on house number for easy editing
+            document.getElementById('houseNumber').focus();
             
-            showNotification(`✅ Address filled: ${address.line1}\nYou can edit any field`, 'success');
+            showNotification(`✅ Address selected. You can edit ANY field (house number, street, etc.)`, 'info');
         }
         
         function parseAddressLine(line1) {
             if (!line1) return { houseNumber: '', streetName: '' };
             
-            // Common UK address patterns
+            // Try to extract house number and street
             const patterns = [
                 /^(\d+[A-Z]?)\s+(.+)$/i,                    // 10 Downing Street
                 /^(Flat|Apartment|Suite|Unit)\s+(\w+)\s*,\s*(.+)$/i, // Flat 3A, 10 Downing Street
@@ -1049,7 +1102,7 @@
                 return;
             }
             
-            // Build address if full address is empty
+            // Build address
             let fullAddress = fullAddressText;
             if (!fullAddress) {
                 const addressLines = [];
@@ -1092,7 +1145,7 @@
             displayCustomer(customer);
             updateCustomerCount();
             
-            // Clear for next entry (keep address fields)
+            // Clear for next entry
             clearFormForNextEntry();
             
             showNotification(`✅ ${name} saved successfully!`, 'success');
@@ -1123,10 +1176,11 @@
             document.getElementById('fullAddress').value = '';
             document.getElementById('postcodeDisplay').value = '';
             
-            document.getElementById('addressSelectionGroup').style.display = 'none';
+            document.getElementById('searchResults').style.display = 'none';
             document.getElementById('country').value = 'United Kingdom';
             
-            availableAddresses = [];
+            allFoundAddresses = [];
+            searchSources = [];
             
             document.getElementById('customerName').focus();
         }
@@ -1267,9 +1321,9 @@
             }, 5000);
         }
         
-        console.log('✅ Restaurant CRM v4.0 - Complete UK & NI Address Database loaded');
-        console.log('📌 Includes comprehensive Northern Ireland (BT) postcode data');
-        console.log('💡 Try: BT7 1EX, BT9 5AD, SW1A 1AA, EH1 1RE');
+        console.log('✅ Restaurant CRM v5.0 - Ultimate Address Aggregator loaded');
+        console.log('🔍 Searches: Postcodes.io, Ideal Postcodes, GetAddress.io, UK-Postcodes, PostcodeAPI');
+        console.log('✏️ All fields always editable - pick OR type manually');
     </script>
 </body>
 </html>
