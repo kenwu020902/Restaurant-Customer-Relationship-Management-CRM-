@@ -61,7 +61,7 @@
             font-size: 1.1em;
         }
         
-        .form-group input, .form-group textarea, .form-group select {
+        .form-group input, .form-group textarea {
             width: 100%;
             padding: 15px;
             border: 2px solid #ddd;
@@ -71,7 +71,7 @@
             font-family: inherit;
         }
         
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        .form-group input:focus, .form-group textarea:focus {
             border-color: #6a11cb;
             outline: none;
             box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
@@ -143,11 +143,6 @@
         
         .dropdown-item:hover {
             background: #f0f0ff;
-        }
-        
-        .dropdown-item.selected {
-            background: #e8f5e9;
-            font-weight: bold;
         }
         
         .real-badge {
@@ -223,17 +218,6 @@
             animation: slideIn 0.3s ease;
         }
         
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-        }
-        
         .area-badge {
             display: inline-block;
             background: #2196F3;
@@ -252,10 +236,6 @@
         @keyframes slideOut {
             from { transform: translateX(0); opacity: 1; }
             to { transform: translateX(100%); opacity: 0; }
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
         }
         
         @media (max-width: 600px) {
@@ -280,7 +260,7 @@
         <!-- HEADER -->
         <div class="header">
             <h1>🍽️ Restaurant CRM</h1>
-            <p>Real UK Address Database - Actual Streets, Not "Main Street"</p>
+            <p>Real UK Address Database - Actual Streets</p>
         </div>
         
         <!-- ADD CUSTOMER FORM -->
@@ -289,7 +269,7 @@
             
             <!-- INFO BANNER -->
             <div style="background: #E8F5E9; padding: 15px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4CAF50;">
-                <strong>✅ REAL UK ADDRESSES:</strong> Uses actual streets from UK cities. Try: BT7, SW1A, EH1, M1, CF10
+                <strong>✅ REAL UK ADDRESSES:</strong> Enter a UK city or postcode area below
             </div>
             
             <div class="form-group">
@@ -302,30 +282,29 @@
                 <input type="tel" id="phone" placeholder="e.g., 07123 456789" required>
             </div>
             
-            <!-- POSTCODE LOOKUP -->
+            <!-- SIMPLE CITY/POSTCODE SELECTOR -->
             <div class="form-group">
-                <label for="postcode">UK Postcode Area Lookup *</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="postcode" placeholder="Enter postcode area e.g., BT7 or SW1A" style="flex: 1;">
-                    <button type="button" onclick="findRealAddresses()" id="searchBtn" style="
-                        background: #2196F3; 
-                        color: white; 
-                        border: none; 
-                        padding: 12px 20px; 
-                        border-radius: 8px; 
-                        cursor: pointer; 
-                        font-weight: bold;">
-                        🔍 Find Real Addresses
-                    </button>
-                </div>
-                <small style="color: #666;">Enter postcode area (first part) to see actual streets in that area</small>
+                <label for="citySelector">Select UK City/Area *</label>
+                <select id="citySelector" style="width: 100%; padding: 15px; border-radius: 10px; border: 2px solid #6a11cb;" onchange="loadStreetsForCity()">
+                    <option value="">-- Choose a city/area --</option>
+                    <option value="belfast">Belfast (BT Area)</option>
+                    <option value="london">London Central</option>
+                    <option value="edinburgh">Edinburgh (EH Area)</option>
+                    <option value="glasgow">Glasgow (G Area)</option>
+                    <option value="cardiff">Cardiff (CF Area)</option>
+                    <option value="manchester">Manchester (M Area)</option>
+                    <option value="birmingham">Birmingham (B Area)</option>
+                    <option value="leeds">Leeds (LS Area)</option>
+                    <option value="liverpool">Liverpool (L Area)</option>
+                </select>
+                <small style="color: #666;">Select a city to see its real streets</small>
             </div>
             
             <!-- REAL ADDRESS SELECTION -->
             <div class="form-group" id="addressSection" style="display: none;">
                 <label>Select Real Street <span class="area-badge" id="areaBadge">Area</span></label>
                 <div class="address-dropdown">
-                    <input type="text" id="addressFilter" placeholder="Filter streets..." 
+                    <input type="text" id="addressFilter" placeholder="Type to filter streets..." 
                            oninput="filterAddresses()" 
                            style="width: 100%; padding: 15px; border: 2px solid #6a11cb; border-radius: 10px;">
                     
@@ -333,7 +312,7 @@
                         <!-- Real addresses will appear here -->
                     </div>
                 </div>
-                <small style="color: #666;">Select a real street from the database</small>
+                <small style="color: #666;">Select a real street from the city</small>
             </div>
             
             <!-- ADDRESS FIELDS -->
@@ -400,200 +379,211 @@
         </div>
     </div>
 
-    <!-- FOOTER -->
-    <div style="text-align: center; color: white; margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
-        <p>Restaurant CRM v8.0 | Real UK Address Database | All Real Streets</p>
-    </div>
-
     <script>
-        // ========== REAL UK ADDRESS DATABASE ==========
-        // Contains ACTUAL streets from UK cities (not "Main Street")
-        const REAL_UK_ADDRESS_DB = {
-            // NORTHERN IRELAND - BELFAST
-            'BT7': {
-                area: 'Belfast South (University Area)',
+        // ========== REAL UK STREET DATABASE ==========
+        const UK_STREETS_DB = {
+            belfast: {
+                name: 'Belfast',
+                postcode: 'BT1 1AA',
+                county: 'County Antrim',
                 streets: [
-                    {name: 'Vernons Street', type: 'residential', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'University Road', type: 'mixed', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Botanic Avenue', type: 'commercial', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'College Park', type: 'residential', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Malone Road', type: 'residential', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Lisburn Road', type: 'commercial', city: 'Belfast', county: 'County Antrim'}
+                    'Vernons Street',
+                    'University Road', 
+                    'Botanic Avenue',
+                    'College Park',
+                    'Malone Road',
+                    'Lisburn Road',
+                    'Ormeau Road',
+                    'Ravenhill Road',
+                    'Shore Road',
+                    'Antrim Road'
                 ]
             },
-            'BT9': {
-                area: 'Belfast (Malone Road Area)',
+            london: {
+                name: 'London',
+                postcode: 'SW1A 1AA',
+                county: 'Greater London',
                 streets: [
-                    {name: 'Malone Road', type: 'residential', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Eglantine Avenue', type: 'residential', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Stranmillis Road', type: 'mixed', city: 'Belfast', county: 'County Antrim'}
+                    'Downing Street',
+                    'Whitehall',
+                    'Parliament Street',
+                    'Regent Street',
+                    'Oxford Street',
+                    'Piccadilly',
+                    'Baker Street',
+                    'Fleet Street',
+                    'Kensington High Street',
+                    'Park Lane'
                 ]
             },
-            'BT1': {
-                area: 'Belfast City Centre',
+            edinburgh: {
+                name: 'Edinburgh',
+                postcode: 'EH1 1RE',
+                county: 'Midlothian',
                 streets: [
-                    {name: 'Royal Avenue', type: 'commercial', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Donegall Place', type: 'commercial', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'High Street', type: 'commercial', city: 'Belfast', county: 'County Antrim'},
-                    {name: 'Castle Street', type: 'commercial', city: 'Belfast', county: 'County Antrim'}
+                    'Princes Street',
+                    'Royal Mile',
+                    'George Street',
+                    'Queen Street',
+                    'High Street',
+                    'Grassmarket',
+                    'Victoria Street',
+                    'Rose Street',
+                    'Lothian Road',
+                    'Leith Walk'
                 ]
             },
-            
-            // LONDON
-            'SW1A': {
-                area: 'London Westminster',
+            glasgow: {
+                name: 'Glasgow',
+                postcode: 'G1 1AA',
+                county: 'Glasgow City',
                 streets: [
-                    {name: 'Downing Street', type: 'government', city: 'London', county: 'Greater London'},
-                    {name: 'Whitehall', type: 'government', city: 'London', county: 'Greater London'},
-                    {name: 'Parliament Street', type: 'government', city: 'London', county: 'Greater London'}
+                    'Buchanan Street',
+                    'Sauchiehall Street',
+                    'Argyle Street',
+                    'Union Street',
+                    'High Street',
+                    'Trongate',
+                    'Saltmarket',
+                    'Dumbarton Road',
+                    'Byres Road',
+                    'Maryhill Road'
                 ]
             },
-            'W1A': {
-                area: 'London West End',
+            cardiff: {
+                name: 'Cardiff',
+                postcode: 'CF10 1AA',
+                county: 'Cardiff',
                 streets: [
-                    {name: 'Regent Street', type: 'commercial', city: 'London', county: 'Greater London'},
-                    {name: 'Oxford Street', type: 'commercial', city: 'London', county: 'Greater London'},
-                    {name: 'Piccadilly', type: 'commercial', city: 'London', county: 'Greater London'}
+                    'Queen Street',
+                    'St Mary Street',
+                    'High Street',
+                    'Wood Street',
+                    'Castle Street',
+                    'Churchill Way',
+                    'The Hayes',
+                    'Bute Street',
+                    'Cowbridge Road',
+                    'Cathays Terrace'
                 ]
             },
-            
-            // SCOTLAND
-            'EH1': {
-                area: 'Edinburgh City Centre',
+            manchester: {
+                name: 'Manchester',
+                postcode: 'M1 1AA',
+                county: 'Greater Manchester',
                 streets: [
-                    {name: 'Princes Street', type: 'commercial', city: 'Edinburgh', county: 'Midlothian'},
-                    {name: 'Royal Mile', type: 'mixed', city: 'Edinburgh', county: 'Midlothian'},
-                    {name: 'George Street', type: 'commercial', city: 'Edinburgh', county: 'Midlothian'},
-                    {name: 'Queen Street', type: 'commercial', city: 'Edinburgh', county: 'Midlothian'}
+                    'Piccadilly',
+                    'Market Street',
+                    'Deansgate',
+                    'Oxford Road',
+                    'Wilmslow Road',
+                    'Princess Street',
+                    'Portland Street',
+                    'Whitworth Street',
+                    'Cheetham Hill Road',
+                    'Bury New Road'
                 ]
             },
-            'G1': {
-                area: 'Glasgow City Centre',
+            birmingham: {
+                name: 'Birmingham',
+                postcode: 'B1 1AA',
+                county: 'West Midlands',
                 streets: [
-                    {name: 'Buchanan Street', type: 'commercial', city: 'Glasgow', county: 'Glasgow City'},
-                    {name: 'Sauchiehall Street', type: 'commercial', city: 'Glasgow', county: 'Glasgow City'},
-                    {name: 'Argyle Street', type: 'commercial', city: 'Glasgow', county: 'Glasgow City'}
+                    'New Street',
+                    'Corporation Street',
+                    'Bull Ring',
+                    'High Street',
+                    'Digbeth',
+                    'Colmore Row',
+                    'Hagley Road',
+                    'Bristol Road',
+                    'Coventry Road',
+                    'Alum Rock Road'
                 ]
             },
-            
-            // WALES
-            'CF10': {
-                area: 'Cardiff City Centre',
+            leeds: {
+                name: 'Leeds',
+                postcode: 'LS1 1AA',
+                county: 'West Yorkshire',
                 streets: [
-                    {name: 'Queen Street', type: 'commercial', city: 'Cardiff', county: 'Cardiff'},
-                    {name: 'St Mary Street', type: 'commercial', city: 'Cardiff', county: 'Cardiff'},
-                    {name: 'High Street', type: 'commercial', city: 'Cardiff', county: 'Cardiff'}
+                    'Briggate',
+                    'Commercial Street',
+                    'The Headrow',
+                    'Bond Street',
+                    'Albion Street',
+                    'Boar Lane',
+                    'Kirkgate',
+                    'Meanwood Road',
+                    'Otley Road',
+                    'Roundhay Road'
                 ]
             },
-            
-            // MANCHESTER
-            'M1': {
-                area: 'Manchester City Centre',
+            liverpool: {
+                name: 'Liverpool',
+                postcode: 'L1 1AA',
+                county: 'Merseyside',
                 streets: [
-                    {name: 'Piccadilly', type: 'commercial', city: 'Manchester', county: 'Greater Manchester'},
-                    {name: 'Market Street', type: 'commercial', city: 'Manchester', county: 'Greater Manchester'},
-                    {name: 'Deansgate', type: 'commercial', city: 'Manchester', county: 'Greater Manchester'}
-                ]
-            },
-            
-            // BIRMINGHAM
-            'B1': {
-                area: 'Birmingham City Centre',
-                streets: [
-                    {name: 'New Street', type: 'commercial', city: 'Birmingham', county: 'West Midlands'},
-                    {name: 'Corporation Street', type: 'commercial', city: 'Birmingham', county: 'West Midlands'}
-                ]
-            },
-            
-            // LEEDS
-            'LS1': {
-                area: 'Leeds City Centre',
-                streets: [
-                    {name: 'Briggate', type: 'commercial', city: 'Leeds', county: 'West Yorkshire'},
-                    {name: 'Commercial Street', type: 'commercial', city: 'Leeds', county: 'West Yorkshire'}
-                ]
-            },
-            
-            // LIVERPOOL
-            'L1': {
-                area: 'Liverpool City Centre',
-                streets: [
-                    {name: 'Church Street', type: 'commercial', city: 'Liverpool', county: 'Merseyside'},
-                    {name: 'Lord Street', type: 'commercial', city: 'Liverpool', county: 'Merseyside'}
-                ]
-            },
-            
-            // NEWCASTLE
-            'NE1': {
-                area: 'Newcastle City Centre',
-                streets: [
-                    {name: 'Northumberland Street', type: 'commercial', city: 'Newcastle', county: 'Tyne and Wear'},
-                    {name: 'Grainger Street', type: 'commercial', city: 'Newcastle', county: 'Tyne and Wear'}
-                ]
-            },
-            
-            // SHEFFIELD
-            'S1': {
-                area: 'Sheffield City Centre',
-                streets: [
-                    {name: 'Fargate', type: 'commercial', city: 'Sheffield', county: 'South Yorkshire'},
-                    {name: 'The Moor', type: 'commercial', city: 'Sheffield', county: 'South Yorkshire'}
+                    'Church Street',
+                    'Lord Street',
+                    'Bold Street',
+                    'Ranelagh Street',
+                    'Whitechapel',
+                    'Scotland Road',
+                    'Smithdown Road',
+                    'Aigburth Road',
+                    'Allerton Road',
+                    'Lark Lane'
                 ]
             }
         };
-        
+
         // ========== GLOBAL VARIABLES ==========
         let customers = JSON.parse(localStorage.getItem('restaurantCustomers')) || [];
-        let currentArea = '';
-        
+        let currentCity = null;
+
         // ========== INITIALIZATION ==========
         document.addEventListener('DOMContentLoaded', function() {
             updateCustomerCount();
             refreshCustomerList();
         });
-        
-        // ========== REAL ADDRESS LOOKUP ==========
-        function findRealAddresses() {
-            const postcodeInput = document.getElementById('postcode').value.trim().toUpperCase();
+
+        // ========== LOAD STREETS FOR SELECTED CITY ==========
+        function loadStreetsForCity() {
+            const citySelector = document.getElementById('citySelector');
+            const selectedCity = citySelector.value;
             
-            if (!postcodeInput) {
-                showNotification('Please enter a postcode area (e.g., BT7, SW1A, EH1)', 'error');
+            if (!selectedCity) {
+                document.getElementById('addressSection').style.display = 'none';
                 return;
             }
             
-            // Clean the input - take first part only
-            const areaCode = postcodeInput.replace(/\s+/g, '').match(/^[A-Z]{1,2}[0-9][A-Z0-9]?/)?.[0];
+            const cityData = UK_STREETS_DB[selectedCity];
             
-            if (!areaCode) {
-                showNotification('Invalid format. Use format like: BT7, SW1A, EH1, M1', 'error');
+            if (!cityData) {
+                showNotification('City data not found', 'error');
                 return;
             }
             
-            const areaData = REAL_UK_ADDRESS_DB[areaCode];
-            
-            if (!areaData) {
-                showNotification(`No data for ${areaCode}. Try: BT7, SW1A, EH1, M1, CF10, G1, B1, LS1, L1`, 'warning');
-                return;
-            }
-            
-            currentArea = areaCode;
+            currentCity = cityData;
             
             // Update area badge
-            document.getElementById('areaBadge').textContent = areaData.area;
+            document.getElementById('areaBadge').textContent = cityData.name;
             
             // Show address section
             document.getElementById('addressSection').style.display = 'block';
             
             // Fill address dropdown with REAL streets
-            fillAddressDropdown(areaData.streets, areaCode);
+            fillAddressDropdown(cityData.streets);
             
-            // Auto-fill postcode display
-            document.getElementById('postcodeDisplay').value = areaCode + ' 1AA';
+            // Auto-fill city and postcode
+            document.getElementById('city').value = cityData.name;
+            document.getElementById('county').value = cityData.county;
+            document.getElementById('postcodeDisplay').value = cityData.postcode;
             
-            showNotification(`Found ${areaData.streets.length} real streets in ${areaData.area}`, 'success');
+            showNotification(`Loaded ${cityData.streets.length} real streets in ${cityData.name}`, 'success');
         }
         
-        function fillAddressDropdown(streets, areaCode) {
+        function fillAddressDropdown(streets) {
             const dropdown = document.getElementById('addressDropdown');
             dropdown.innerHTML = '';
             
@@ -614,9 +604,9 @@
             const divider = document.createElement('div');
             divider.style.padding = '8px 15px';
             divider.style.fontSize = '11px';
-            divider.style.color: '#666';
+            divider.style.color = '#666';
             divider.style.borderBottom = '1px solid #eee';
-            divider.textContent = 'Real streets in this area:';
+            divider.textContent = 'Real streets in this city:';
             dropdown.appendChild(divider);
             
             // Add real streets
@@ -626,16 +616,13 @@
                 
                 item.innerHTML = `
                     <div style="font-weight: 500; color: #2c3e50; margin-bottom: 3px;">
-                        ${street.name}
+                        ${street}
                         <span class="real-badge">REAL</span>
-                    </div>
-                    <div style="font-size: 12px; color: #666;">
-                        ${street.city}, ${street.county}
                     </div>
                 `;
                 
                 item.onclick = () => {
-                    selectStreet(street.name, street.city, street.county);
+                    selectStreet(street);
                     dropdown.style.display = 'none';
                 };
                 
@@ -645,17 +632,15 @@
             dropdown.style.display = 'block';
         }
         
-        function selectStreet(streetName, city, county) {
+        function selectStreet(streetName) {
             document.getElementById('streetName').value = streetName;
-            document.getElementById('city').value = city;
-            document.getElementById('county').value = county;
             
             // Focus on house number
             setTimeout(() => {
                 document.getElementById('houseNumber').focus();
             }, 100);
             
-            showNotification(`Selected: ${streetName}, ${city}`, 'success');
+            showNotification(`Selected: ${streetName}`, 'success');
         }
         
         function filterAddresses() {
@@ -815,23 +800,26 @@
         }
         
         function clearFormForNextEntry() {
-            // Clear form but keep postcode area
-            const postcodeArea = document.getElementById('postcode').value;
+            // Clear form but keep city selection
+            const citySelector = document.getElementById('citySelector');
             
             document.getElementById('customerName').value = '';
             document.getElementById('phone').value = '';
             document.getElementById('houseNumber').value = '';
             document.getElementById('usualOrder').value = '';
-            
-            // Keep postcode area for next customer in same area
-            document.getElementById('postcode').value = postcodeArea;
             document.getElementById('streetName').value = '';
-            document.getElementById('city').value = '';
-            document.getElementById('county').value = '';
             
-            // Hide address section
-            document.getElementById('addressSection').style.display = 'none';
-            document.getElementById('addressDropdown').style.display = 'none';
+            // Keep city selection for next customer in same city
+            if (citySelector.value) {
+                // Re-load streets for same city
+                loadStreetsForCity();
+            } else {
+                document.getElementById('addressSection').style.display = 'none';
+                document.getElementById('addressDropdown').style.display = 'none';
+                document.getElementById('city').value = '';
+                document.getElementById('county').value = '';
+                document.getElementById('postcodeDisplay').value = '';
+            }
             
             // Focus on name for next entry
             document.getElementById('customerName').focus();
@@ -840,7 +828,7 @@
         function clearForm() {
             document.getElementById('customerName').value = '';
             document.getElementById('phone').value = '';
-            document.getElementById('postcode').value = '';
+            document.getElementById('citySelector').value = '';
             document.getElementById('houseNumber').value = '';
             document.getElementById('streetName').value = '';
             document.getElementById('city').value = '';
@@ -908,9 +896,13 @@
             }, 5000);
         }
         
-        console.log('✅ Restaurant CRM v8.0 loaded with REAL UK address database');
-        console.log('📍 Try these postcode areas: BT7, SW1A, EH1, M1, CF10, G1');
-        console.log('📌 All streets are REAL (not "Main Street")');
+        // Simple slideOut animation
+        const style = document.createElement('style');
+        style.textContent = '@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }';
+        document.head.appendChild(style);
+        
+        console.log('✅ Restaurant CRM loaded with REAL UK street database');
+        console.log('📍 Select a city from the dropdown to see real streets');
     </script>
 </body>
 </html>
